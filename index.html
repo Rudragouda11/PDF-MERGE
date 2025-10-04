@@ -49,7 +49,7 @@
     <div class="drop-zone" id="splitDrop">Drag & drop a PDF here or click to select</div>
     <input type="file" id="splitFile" accept="application/pdf" style="display:none;">
     <ul id="splitList"></ul>
-    <button id="splitBtn">Split PDF</button>
+    <button id="splitBtn">Split Selected Pages</button>
     <progress id="splitProgress" value="0" max="100" style="display:none;"></progress>
   </div>
 </main>
@@ -68,7 +68,7 @@ tabBtns.forEach(btn => {
   });
 });
 
-// Helper for drag & drop
+// Drag & Drop Helper
 function setupDropZone(dropZone, input, fileListArray, ulElement) {
   dropZone.addEventListener('click', () => input.click());
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -116,7 +116,7 @@ function enableReorder(ul, files) {
   });
 }
 
-// Merge PDFs
+// Merge PDFs (unchanged)
 const mergeFiles = [];
 const mergeDrop = document.getElementById('mergeDrop');
 const mergeInput = document.getElementById('mergeFiles');
@@ -149,7 +149,7 @@ mergeBtn.addEventListener('click', async () => {
   mergeProgress.style.display = 'none';
 });
 
-// Split PDF
+// Split PDF with page selection
 const splitFiles = [];
 const splitDrop = document.getElementById('splitDrop');
 const splitInput = document.getElementById('splitFile');
@@ -158,32 +158,48 @@ const splitBtn = document.getElementById('splitBtn');
 const splitProgress = document.getElementById('splitProgress');
 setupDropZone(splitDrop, splitInput, splitFiles, splitList);
 
+splitInput.addEventListener('change', async () => {
+  const file = splitInput.files[0];
+  if(!file) return;
+  if(file.size > 100*1024*1024){ alert('File > 100MB'); return; }
+  splitList.innerHTML = '';
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
+  const pageCount = pdf.getPageCount();
+  for(let i=0;i<pageCount;i++){
+    const li = document.createElement('li');
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = i;
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(` Page ${i+1}`));
+    li.appendChild(label);
+    splitList.appendChild(li);
+  }
+});
+
 splitBtn.addEventListener('click', async () => {
   const file = splitInput.files[0];
   if(!file){ alert('Select a PDF'); return; }
-  if(file.size > 100*1024*1024){ alert('File > 100MB'); return; }
   splitProgress.style.display = 'block';
   splitProgress.value = 0;
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
-  splitList.innerHTML = '';
-  const pageCount = pdf.getPageCount();
-  for(let i=0;i<pageCount;i++){
-    const newPdf = await PDFLib.PDFDocument.create();
-    const [copied] = await newPdf.copyPages(pdf,[i]);
+  const selectedIndexes = Array.from(splitList.querySelectorAll('input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+  if(selectedIndexes.length===0){ alert('Select at least 1 page'); splitProgress.style.display='none'; return; }
+  const newPdf = await PDFLib.PDFDocument.create();
+  for(let i=0;i<selectedIndexes.length;i++){
+    const [copied] = await newPdf.copyPages(pdf,[selectedIndexes[i]]);
     newPdf.addPage(copied);
-    const bytes = await newPdf.save();
-    const blob = new Blob([bytes], {type:'application/pdf'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${file.name.replace('.pdf','')}_page_${i+1}.pdf`;
-    a.textContent = `Download page ${i+1}`;
-    a.classList.add('download-link');
-    const li = document.createElement('li');
-    li.appendChild(a);
-    splitList.appendChild(li);
-    splitProgress.value = Math.round(((i+1)/pageCount)*100);
+    splitProgress.value = Math.round(((i+1)/selectedIndexes.length)*100);
   }
+  const bytes = await newPdf.save();
+  const blob = new Blob([bytes], {type:'application/pdf'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${file.name.replace('.pdf','')}_selected.pdf`;
+  a.click();
   splitProgress.style.display = 'none';
 });
 </script>
