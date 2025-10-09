@@ -19,23 +19,28 @@
     button { padding: 12px 20px; font-size: 16px; margin: 10px 0; cursor: pointer; border: none; background: #4285f4; color: white; border-radius: 8px; transition: 0.3s;}
     button:hover { background: #306fd0;}
     .pdf-preview-list { width: 100%; display: flex; flex-direction: column; gap: 24px; max-height: 320px; overflow-y: auto; margin-bottom: 10px; border-radius: 10px; background: #f7f7f7; padding: 8px;}
-    .pdf-preview-file { background: #fff; border-radius: 10px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03);}
-    .pdf-pages { display: flex; flex-wrap: wrap; gap: 10px;}
-    .pdf-page-thumb { display: flex; flex-direction: column; align-items: center; margin-bottom: 8px;}
-    .pdf-page-thumb canvas { width: 80px; height: 110px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 2px; background: #eee;}
-    .file-remove { color: red; cursor: pointer; font-size: 14px; margin-top: 4px;}
+    .sortable-list {display: flex; flex-direction: row; gap: 20px;}
+    .pdf-preview-file { background: #fff; border-radius: 10px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); min-width: 120px;}
     .pdf-filename { font-weight: bold; margin-bottom: 5px; color: #4285f4;}
+    .file-remove { color: red; cursor: pointer; font-size: 14px; margin-top: 4px;}
+    .pdf-pages { display: flex; flex-wrap: wrap; gap: 10px;}
+    .sortable-pages {display: flex; flex-wrap: wrap; gap: 10px;}
+    .pdf-page-thumb { display: flex; flex-direction: column; align-items: center; margin-bottom: 8px; min-width: 90px;}
+    .pdf-page-thumb canvas { width: 80px; height: 110px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 2px; background: #eee;}
+    .pdf-page-thumb span {font-size: 12px;}
+    .range-select { margin: 10px 0; }
     progress { width: 100%; margin-top: 10px; height: 18px; border-radius: 5px; }
-    .page-checkbox { margin-top: 2px;}
     @media (max-width:600px) {
       main { max-width: 100%; }
-      .pdf-pages { flex-direction: column; }
+      .sortable-list { flex-direction: column; }
+      .sortable-pages { flex-direction: column; }
       .pdf-preview-list { max-height: 220px; }
     }
   </style>
+  <!-- SortableJS for drag-and-drop -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
-
 <header>PDF Merge & Split Pro</header>
 <main>
   <div class="tabs">
@@ -46,7 +51,9 @@
   <div class="tab-content active" id="merge">
     <div class="drop-zone" id="mergeDrop">Drag & drop PDFs here or click to select</div>
     <input type="file" id="mergeFiles" multiple accept="application/pdf">
-    <div class="pdf-preview-list" id="mergeList"></div>
+    <div class="pdf-preview-list">
+      <div id="mergeList" class="sortable-list"></div>
+    </div>
     <button id="mergeBtn">Merge PDFs</button>
     <progress id="mergeProgress" value="0" max="100" style="display:none;"></progress>
   </div>
@@ -54,8 +61,15 @@
   <div class="tab-content" id="split">
     <div class="drop-zone" id="splitDrop">Drag & drop a PDF here or click to select</div>
     <input type="file" id="splitFile" accept="application/pdf">
-    <div class="pdf-preview-list" id="splitList"></div>
-    <button id="splitBtn">Split Selected Pages</button>
+    <div class="pdf-preview-list">
+      <div id="splitList" class="sortable-pages"></div>
+    </div>
+    <div class="range-select">
+      <label>Start page: <input type="number" id="splitStart" min="1" value="1" style="width:40px;"></label>
+      <label>End page: <input type="number" id="splitEnd" min="1" value="1" style="width:40px;"></label>
+      <button id="selectAllPages" type="button">Select all</button>
+    </div>
+    <button id="splitBtn">Split Selected Range</button>
     <progress id="splitProgress" value="0" max="100" style="display:none;"></progress>
   </div>
 </main>
@@ -74,7 +88,11 @@ tabBtns.forEach(btn => {
   });
 });
 
-function setupDropZone(dropZone, input, fileListArray, previewListDiv, previewPages=false, showCheckboxes=false){
+// --- Merge Tab ---
+const mergeFilesArr = [];
+setupDropZone(document.getElementById('mergeDrop'), document.getElementById('mergeFiles'), mergeFilesArr, document.getElementById('mergeList'), true);
+
+function setupDropZone(dropZone, input, fileListArray, previewListDiv, isMerge){
   dropZone.addEventListener('click', ()=> input.click());
   dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('dragover'); });
   dropZone.addEventListener('dragleave', e=>{ e.preventDefault(); dropZone.classList.remove('dragover'); });
@@ -83,12 +101,12 @@ function setupDropZone(dropZone, input, fileListArray, previewListDiv, previewPa
     dropZone.classList.remove('dragover');
     const files = Array.from(e.dataTransfer.files).filter(f=>f.type==='application/pdf');
     addNewFiles(fileListArray, files);
-    await renderFilesPreview(fileListArray, previewListDiv, previewPages, showCheckboxes);
+    await renderFileList(fileListArray, previewListDiv, isMerge);
   });
   input.addEventListener('change', async ()=>{
     const files = Array.from(input.files);
     addNewFiles(fileListArray, files);
-    await renderFilesPreview(fileListArray, previewListDiv, previewPages, showCheckboxes);
+    await renderFileList(fileListArray, previewListDiv, isMerge);
   });
 }
 
@@ -100,83 +118,63 @@ function addNewFiles(fileListArray, newFiles) {
   });
 }
 
-// --- PDF Page Previews: Merge (no checkboxes), Split (with checkboxes) ---
-async function renderFilesPreview(files, containerDiv, previewPages, showCheckboxes=false){
+async function renderFileList(files, containerDiv, isMerge){
   containerDiv.innerHTML = '';
   for(let i=0; i<files.length; i++) {
     const file = files[i];
     const fileDiv = document.createElement('div');
     fileDiv.className = 'pdf-preview-file';
-    const filename = document.createElement('div');
-    filename.className = 'pdf-filename';
-    filename.textContent = file.name;
-    fileDiv.appendChild(filename);
-
+    fileDiv.draggable = true;
+    fileDiv.dataset.index = i;
+    fileDiv.style.cursor = "grab";
+    fileDiv.innerHTML = `<div class="pdf-filename">${file.name}</div>`;
     const removeBtn = document.createElement('span');
     removeBtn.textContent = "Remove";
     removeBtn.classList.add('file-remove');
     removeBtn.onclick = () => {
       files.splice(i,1);
-      renderFilesPreview(files, containerDiv, previewPages, showCheckboxes);
+      renderFileList(files, containerDiv, isMerge);
     };
     fileDiv.appendChild(removeBtn);
 
-    if(previewPages){
-      const pagesDiv = document.createElement('div');
-      pagesDiv.className = 'pdf-pages';
-      fileDiv.appendChild(pagesDiv);
-
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-        const numPages = pdf.numPages;
-        for(let pageNum = 1; pageNum <= numPages; pageNum++) {
-          const pageThumbDiv = document.createElement('div');
-          pageThumbDiv.className = 'pdf-page-thumb';
-          const canvas = document.createElement('canvas');
-          canvas.width = 80;
-          canvas.height = 110;
-          pageThumbDiv.appendChild(canvas);
-
-          // Checkbox for selection (Split tab)
-          if (showCheckboxes) {
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = pageNum - 1; // zero-based for PDF-lib
-            checkbox.className = 'page-checkbox';
-            checkbox.checked = true; // default: all selected
-            pageThumbDiv.appendChild(checkbox);
-          }
-
-          const pageLabel = document.createElement('div');
-          pageLabel.textContent = `Page ${pageNum}`;
-          pageLabel.style.fontSize = '12px';
-          pageThumbDiv.appendChild(pageLabel);
-          pagesDiv.appendChild(pageThumbDiv);
-
-          pdf.getPage(pageNum).then(page => {
-            const scale = canvas.width / page.getViewport({scale:1}).width;
-            const viewport = page.getViewport({scale});
-            canvas.height = viewport.height;
-            page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
-          });
-        }
-      } catch(e) {
-        const errorMsg = document.createElement('div');
-        errorMsg.textContent = "Preview unavailable";
-        pagesDiv.appendChild(errorMsg);
-      }
+    // Preview first page only for merge
+    const previewArea = document.createElement('div');
+    previewArea.className = 'pdf-pages';
+    fileDiv.appendChild(previewArea);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+      const page = await pdf.getPage(1);
+      const canvas = document.createElement('canvas');
+      canvas.width = 80;
+      canvas.height = 110;
+      const scale = canvas.width / page.getViewport({scale:1}).width;
+      const viewport = page.getViewport({scale});
+      canvas.height = viewport.height;
+      await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+      previewArea.appendChild(canvas);
+      previewArea.appendChild(document.createElement('br'));
+      previewArea.appendChild(document.createTextNode("Page 1"));
+    } catch(e) {
+      previewArea.innerHTML = "Preview unavailable";
     }
     containerDiv.appendChild(fileDiv);
   }
+  // Make sortable
+  Sortable.create(containerDiv, {
+    animation: 150,
+    onEnd: function (evt) {
+      // Rearrange files array to match visual order
+      const newOrder = Array.from(containerDiv.children).map(el => parseInt(el.dataset.index));
+      const reordered = newOrder.map(idx => files[idx]);
+      files.splice(0, files.length, ...reordered);
+      renderFileList(files, containerDiv, isMerge);
+    }
+  });
 }
 
-// --- Merge PDFs ---
-const mergeFilesArr = [];
-setupDropZone(document.getElementById('mergeDrop'), document.getElementById('mergeFiles'), mergeFilesArr, document.getElementById('mergeList'), true, false);
 const mergeBtn = document.getElementById('mergeBtn');
 const mergeProgress = document.getElementById('mergeProgress');
-
 mergeBtn.addEventListener('click', async ()=>{
   if(mergeFilesArr.length<2){ alert('Select at least 2 PDFs to merge.'); return;}
   mergeProgress.style.display='block';
@@ -203,9 +201,78 @@ mergeBtn.addEventListener('click', async ()=>{
   mergeProgress.style.display='none';
 });
 
-// --- Split PDF with page selection ---
+// --- Split Tab ---
 const splitFilesArr = [];
-setupDropZone(document.getElementById('splitDrop'), document.getElementById('splitFile'), splitFilesArr, document.getElementById('splitList'), true, true);
+let splitPagesArr = [];
+let splitFileOriginalOrder = [];
+setupDropZone(document.getElementById('splitDrop'), document.getElementById('splitFile'), splitFilesArr, document.getElementById('splitList'), false);
+
+async function renderSplitPages(files, containerDiv){
+  containerDiv.innerHTML = '';
+  splitPagesArr = [];
+  splitFileOriginalOrder = [];
+  if (files.length === 0) return;
+  const file = files[0];
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    const numPages = pdf.numPages;
+    document.getElementById('splitStart').max = numPages;
+    document.getElementById('splitEnd').max = numPages;
+    document.getElementById('splitEnd').value = numPages;
+    splitPagesArr = Array.from({length: numPages}, (_, i) => i+1);
+    splitFileOriginalOrder = splitPagesArr.slice();
+
+    for(let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const pageThumbDiv = document.createElement('div');
+      pageThumbDiv.className = 'pdf-page-thumb';
+      pageThumbDiv.draggable = true;
+      pageThumbDiv.dataset.pageNum = pageNum;
+      const canvas = document.createElement('canvas');
+      canvas.width = 80;
+      canvas.height = 110;
+      pageThumbDiv.appendChild(canvas);
+      const pageLabel = document.createElement('span');
+      pageLabel.textContent = `Page ${pageNum}`;
+      pageThumbDiv.appendChild(pageLabel);
+      containerDiv.appendChild(pageThumbDiv);
+
+      pdf.getPage(pageNum).then(page => {
+        const scale = canvas.width / page.getViewport({scale:1}).width;
+        const viewport = page.getViewport({scale});
+        canvas.height = viewport.height;
+        page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+      });
+    }
+    // Make sortable
+    Sortable.create(containerDiv, {
+      animation: 150,
+      onEnd: function (evt) {
+        // Update splitPagesArr based on current order
+        splitPagesArr = Array.from(containerDiv.children).map(el => parseInt(el.dataset.pageNum));
+      }
+    });
+  } catch(e) {
+    containerDiv.innerHTML = "Preview unavailable";
+  }
+}
+
+// Redraw splitList on file change
+document.getElementById('splitFile').addEventListener('change', ()=>{
+  renderSplitPages(splitFilesArr, document.getElementById('splitList'));
+});
+document.getElementById('splitDrop').addEventListener('drop', ()=>{
+  setTimeout(()=>renderSplitPages(splitFilesArr, document.getElementById('splitList')),100);
+});
+
+// Select all pages button
+document.getElementById('selectAllPages').onclick = function() {
+  if (splitPagesArr.length) {
+    document.getElementById('splitStart').value = 1;
+    document.getElementById('splitEnd').value = splitPagesArr.length;
+  }
+};
+
 const splitBtn = document.getElementById('splitBtn');
 const splitProgress = document.getElementById('splitProgress');
 
@@ -217,29 +284,32 @@ splitBtn.addEventListener('click', async ()=>{
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
-    const pageCount = pdf.getPageCount();
 
-    // Get selected page indices from checkboxes
-    const checkboxes = document.querySelectorAll('#splitList .page-checkbox');
-    const selectedPages = Array.from(checkboxes)
-      .filter(cb => cb.checked)
-      .map(cb => parseInt(cb.value));
-
-    if (selectedPages.length === 0) {
-      alert('Please select at least one page to split.');
+    // Range selection
+    let start = parseInt(document.getElementById('splitStart').value);
+    let end = parseInt(document.getElementById('splitEnd').value);
+    if (!start || !end || start > end || start < 1 || end > splitPagesArr.length) {
+      alert('Invalid start/end range.');
       splitProgress.style.display='none';
       return;
     }
 
-    // Create new PDF with selected pages only
+    // Pages to export in their current visual order
+    const pageIndices = splitPagesArr.slice(start-1, end).map(n => n-1); // zero-based
+    if (pageIndices.length === 0) {
+      alert('No pages selected.');
+      splitProgress.style.display='none';
+      return;
+    }
+
     const newPdf = await PDFLib.PDFDocument.create();
-    const copiedPages = await newPdf.copyPages(pdf, selectedPages);
+    const copiedPages = await newPdf.copyPages(pdf, pageIndices);
     copiedPages.forEach(page => newPdf.addPage(page));
     const bytes = await newPdf.save();
     const blob = new Blob([bytes], {type:'application/pdf'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${file.name.replace('.pdf','')}_selected_pages.pdf`;
+    a.download = `${file.name.replace('.pdf','')}_split_pages_${start}_to_${end}.pdf`;
     a.click();
   } catch (e) {
     alert("Failed to split PDF. " + e.message);
@@ -247,6 +317,5 @@ splitBtn.addEventListener('click', async ()=>{
   splitProgress.style.display='none';
 });
 </script>
-
 </body>
 </html>
