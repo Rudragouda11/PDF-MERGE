@@ -5,132 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF Merge & Split Pro</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f0f2f5;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    header {
-      background: linear-gradient(90deg,#4285f4,#34a853);
-      color: white;
-      padding: 20px;
-      width: 100%;
-      text-align: center;
-      font-size: 28px;
-      font-weight: bold;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    main {
-      max-width: 900px;
-      width: 95%;
-      margin-top: 30px;
-    }
-    .tabs {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 12px 0;
-      cursor: pointer;
-      border: none;
-      background: #ddd;
-      font-weight: bold;
-      transition: 0.3s;
-      font-size: 16px;
-    }
-    .tab-btn.active {
-      background: #4285f4;
-      color: white;
-    }
-    .tab-content {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      background: white;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-      margin-bottom: 40px;
-      width: 100%;
-    }
-    .tab-content.active {
-      display: flex;
-    }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
+    header { background: linear-gradient(90deg,#4285f4,#34a853); color: white; padding: 20px; width: 100%; text-align: center; font-size: 28px; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.2);}
+    main { max-width: 900px; width: 95%; margin-top: 30px;}
+    .tabs { display: flex; justify-content: center; margin-bottom: 20px;}
+    .tab-btn { flex: 1; padding: 12px 0; cursor: pointer; border: none; background: #ddd; font-weight: bold; transition: 0.3s; font-size: 16px;}
+    .tab-btn.active { background: #4285f4; color: white;}
+    .tab-content { display: none; flex-direction: column; align-items: center; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.15); margin-bottom: 40px; width: 100%;}
+    .tab-content.active { display: flex;}
     input[type="file"] { display:none; }
-    .drop-zone {
-      border: 2px dashed #bbb;
-      padding: 30px;
-      border-radius: 15px;
-      text-align: center;
-      margin-bottom: 15px;
-      color: #555;
-      transition: 0.3s;
-      width: 100%;
-    }
-    .drop-zone.dragover {
-      border-color: #4285f4;
-      background: #e3f0ff;
-      color: #000;
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      margin: 10px 0;
-      cursor: pointer;
-      border: none;
-      background: #4285f4;
-      color: white;
-      border-radius: 8px;
-      transition: 0.3s;
-    }
-    button:hover { background: #306fd0; }
-    ul { list-style: none; padding: 0; margin-top: 10px; width: 100%; display: flex; flex-wrap: wrap; gap: 10px; }
-    li { padding: 5px; background: #f5f5f5; border-radius: 8px; display: flex; flex-direction: column; align-items: center; cursor: grab; width: 120px; }
-    li img { width: 100px; height: auto; margin-bottom: 5px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    .file-remove {
-      color: red;
-      cursor: pointer;
-      font-size: 14px;
-      margin-top: 4px;
-    }
+    .drop-zone { border: 2px dashed #bbb; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 15px; color: #555; transition: 0.3s; width: 100%;}
+    .drop-zone.dragover { border-color: #4285f4; background: #e3f0ff; color: #000;}
+    button { padding: 12px 20px; font-size: 16px; margin: 10px 0; cursor: pointer; border: none; background: #4285f4; color: white; border-radius: 8px; transition: 0.3s;}
+    button:hover { background: #306fd0;}
+    .pdf-preview-list { width: 100%; display: flex; flex-direction: column; gap: 24px; max-height: 320px; overflow-y: auto; margin-bottom: 10px; border-radius: 10px; background: #f7f7f7; padding: 8px;}
+    .pdf-preview-file { background: #fff; border-radius: 10px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03);}
+    .pdf-pages { display: flex; flex-wrap: wrap; gap: 10px;}
+    .pdf-page-thumb { display: flex; flex-direction: column; align-items: center; margin-bottom: 8px;}
+    .pdf-page-thumb canvas { width: 80px; height: 110px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 2px; background: #eee;}
+    .file-remove { color: red; cursor: pointer; font-size: 14px; margin-top: 4px;}
+    .pdf-filename { font-weight: bold; margin-bottom: 5px; color: #4285f4;}
     progress { width: 100%; margin-top: 10px; height: 18px; border-radius: 5px; }
     @media (max-width:600px) {
       main { max-width: 100%; }
-      ul { flex-direction: column; }
-      li { width: 90%; }
+      .pdf-pages { flex-direction: column; }
+      .pdf-preview-list { max-height: 220px; }
     }
   </style>
 </head>
 <body>
 
 <header>PDF Merge & Split Pro</header>
-
 <main>
   <div class="tabs">
     <button class="tab-btn active" data-tab="merge">Merge PDFs</button>
     <button class="tab-btn" data-tab="split">Split PDF</button>
   </div>
-
   <!-- Merge Section -->
   <div class="tab-content active" id="merge">
     <div class="drop-zone" id="mergeDrop">Drag & drop PDFs here or click to select</div>
     <input type="file" id="mergeFiles" multiple accept="application/pdf">
-    <ul id="mergeList"></ul>
+    <div class="pdf-preview-list" id="mergeList"></div>
     <button id="mergeBtn">Merge PDFs</button>
     <progress id="mergeProgress" value="0" max="100" style="display:none;"></progress>
   </div>
-
   <!-- Split Section -->
   <div class="tab-content" id="split">
     <div class="drop-zone" id="splitDrop">Drag & drop a PDF here or click to select</div>
     <input type="file" id="splitFile" accept="application/pdf">
-    <ul id="splitList"></ul>
+    <div class="pdf-preview-list" id="splitList"></div>
     <button id="splitBtn">Split PDF</button>
     <progress id="splitProgress" value="0" max="100" style="display:none;"></progress>
   </div>
@@ -139,7 +62,6 @@
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.5.141/pdf.min.js"></script>
 <script>
-/* Tabs */
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 tabBtns.forEach(btn => {
@@ -151,8 +73,7 @@ tabBtns.forEach(btn => {
   });
 });
 
-/* Dropzone Setup */
-function setupDropZone(dropZone, input, fileListArray, ulElement, previewPages=false){
+function setupDropZone(dropZone, input, fileListArray, previewListDiv, previewPages=false){
   dropZone.addEventListener('click', ()=> input.click());
   dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('dragover'); });
   dropZone.addEventListener('dragleave', e=>{ e.preventDefault(); dropZone.classList.remove('dragover'); });
@@ -161,16 +82,15 @@ function setupDropZone(dropZone, input, fileListArray, ulElement, previewPages=f
     dropZone.classList.remove('dragover');
     const files = Array.from(e.dataTransfer.files).filter(f=>f.type==='application/pdf');
     addNewFiles(fileListArray, files);
-    renderFileList(fileListArray, ulElement, previewPages);
+    await renderFilesPreview(fileListArray, previewListDiv, previewPages);
   });
   input.addEventListener('change', async ()=>{
     const files = Array.from(input.files);
     addNewFiles(fileListArray, files);
-    renderFileList(fileListArray, ulElement, previewPages);
+    await renderFilesPreview(fileListArray, previewListDiv, previewPages);
   });
 }
 
-/* Avoid duplicate files */
 function addNewFiles(fileListArray, newFiles) {
   newFiles.forEach(file => {
     if (!fileListArray.some(f => f.name === file.name && f.size === file.size)) {
@@ -179,49 +99,66 @@ function addNewFiles(fileListArray, newFiles) {
   });
 }
 
-/* Render file list with preview and remove option */
-async function renderFileList(files, ul, previewPages){
-  ul.innerHTML='';
-  for(let i=0;i<files.length;i++){
+async function renderFilesPreview(files, containerDiv, previewPages){
+  containerDiv.innerHTML = '';
+  for(let i=0; i<files.length; i++) {
     const file = files[i];
-    const li = document.createElement('li');
-    if(previewPages){
-      const img = document.createElement('img');
-      img.alt = "PDF preview";
-      li.appendChild(img);
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({scale:0.5});
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
-        img.src = canvas.toDataURL();
-      } catch(e) {
-        img.alt = "Preview unavailable";
-      }
-    }
-    const name = document.createElement('div');
-    name.textContent = file.name;
-    li.appendChild(name);
+    const fileDiv = document.createElement('div');
+    fileDiv.className = 'pdf-preview-file';
+    const filename = document.createElement('div');
+    filename.className = 'pdf-filename';
+    filename.textContent = file.name;
+    fileDiv.appendChild(filename);
 
-    // Remove file option
     const removeBtn = document.createElement('span');
     removeBtn.textContent = "Remove";
     removeBtn.classList.add('file-remove');
     removeBtn.onclick = () => {
       files.splice(i,1);
-      renderFileList(files, ul, previewPages);
+      renderFilesPreview(files, containerDiv, previewPages);
     };
-    li.appendChild(removeBtn);
+    fileDiv.appendChild(removeBtn);
 
-    ul.appendChild(li);
+    if(previewPages){
+      const pagesDiv = document.createElement('div');
+      pagesDiv.className = 'pdf-pages';
+      fileDiv.appendChild(pagesDiv);
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+        const numPages = pdf.numPages;
+        for(let pageNum = 1; pageNum <= numPages; pageNum++) {
+          const pageThumbDiv = document.createElement('div');
+          pageThumbDiv.className = 'pdf-page-thumb';
+          const canvas = document.createElement('canvas');
+          canvas.width = 80;
+          canvas.height = 110;
+          pageThumbDiv.appendChild(canvas);
+          const pageLabel = document.createElement('div');
+          pageLabel.textContent = `Page ${pageNum}`;
+          pageLabel.style.fontSize = '12px';
+          pageThumbDiv.appendChild(pageLabel);
+          pagesDiv.appendChild(pageThumbDiv);
+
+          pdf.getPage(pageNum).then(page => {
+            const scale = canvas.width / page.getViewport({scale:1}).width;
+            const viewport = page.getViewport({scale});
+            canvas.height = viewport.height;
+            page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+          });
+        }
+      } catch(e) {
+        const errorMsg = document.createElement('div');
+        errorMsg.textContent = "Preview unavailable";
+        pagesDiv.appendChild(errorMsg);
+      }
+    }
+    containerDiv.appendChild(fileDiv);
   }
 }
 
-/* Merge PDFs */
+// Merge PDFs
 const mergeFilesArr = [];
 setupDropZone(document.getElementById('mergeDrop'), document.getElementById('mergeFiles'), mergeFilesArr, document.getElementById('mergeList'), true);
 const mergeBtn = document.getElementById('mergeBtn');
@@ -253,7 +190,7 @@ mergeBtn.addEventListener('click', async ()=>{
   mergeProgress.style.display='none';
 });
 
-/* Split PDF */
+// Split PDF
 const splitFilesArr = [];
 setupDropZone(document.getElementById('splitDrop'), document.getElementById('splitFile'), splitFilesArr, document.getElementById('splitList'), true);
 const splitBtn = document.getElementById('splitBtn');
@@ -269,7 +206,6 @@ splitBtn.addEventListener('click', async ()=>{
     const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
     const pageCount = pdf.getPageCount();
 
-    // Split: Save each page as a separate file
     for(let i=0; i<pageCount; i++){
       const newPdf = await PDFLib.PDFDocument.create();
       const [copied] = await newPdf.copyPages(pdf, [i]);
