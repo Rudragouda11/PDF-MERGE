@@ -26,38 +26,161 @@
       font-weight: bold;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
-    main { max-width: 900px; width: 95%; margin-top: 30px; }
-    .tabs { display: flex; justify-content: center; margin-bottom: 20px;}
-    .tab-btn { flex: 1; padding: 12px 0; cursor: pointer; border: none; background: #ddd; font-weight: bold; transition: 0.3s; font-size: 16px;}
-    .tab-btn.active { background: #4285f4; color: white;}
-    .tab-content { display: none; flex-direction: column; align-items: center; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.15); margin-bottom: 40px; width:100%;}
+    main { 
+      max-width: 900px; 
+      width: 95%; 
+      margin-top: 30px; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .tabs { 
+      display: flex; 
+      justify-content: center; 
+      margin-bottom: 20px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .tab-btn { 
+      flex: 1; 
+      padding: 12px 0; 
+      cursor: pointer; 
+      border: none; 
+      background: #ddd; 
+      font-weight: bold; 
+      transition: 0.3s; 
+      font-size: 16px;
+    }
+    .tab-btn.active { 
+      background: #4285f4; 
+      color: white;
+    }
+    .tab-content { 
+      display: none; 
+      flex-direction: column; 
+      align-items: center; 
+      background: white; 
+      padding: 20px; 
+      border-radius: 15px; 
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15); 
+      margin-bottom: 40px; 
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 280px;
+      max-width: 650px;
+    }
     .tab-content.active { display: flex;}
     input[type="file"] { display:none; }
-    .drop-zone { border: 2px dashed #bbb; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 15px; color: #555; transition: 0.3s; width: 100%;}
-    .drop-zone.dragover { border-color: #4285f4; background: #e3f0ff; color: #000;}
-    button { padding: 12px 20px; font-size: 16px; margin: 10px 0; cursor: pointer; border: none; background: #4285f4; color: white; border-radius: 8px; transition: 0.3s;}
-    button:hover { background: #306fd0;}
-    .pdf-list { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 10px;}
-    .pdf-thumb { display: flex; flex-direction: column; align-items: center; background: #fff; border-radius: 10px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); min-width: 90px;}
-    .pdf-thumb canvas { width: 80px; height: 110px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 2px; background: #eee;}
-    .pdf-thumb .pdf-filename { font-weight: bold; font-size: 13px; margin-bottom: 2px; color: #4285f4;}
-    .file-remove { color: red; cursor: pointer; font-size: 14px; margin-top: 4px;}
-    .range-select { margin: 10px 0; }
-    progress { width: 100%; margin-top: 10px; height: 18px; border-radius: 5px; }
-    @media (max-width:600px) {
-      main { max-width: 100%; }
-      .pdf-list { flex-direction: column; }
+    .drop-zone { 
+      border: 2px dashed #bbb; 
+      padding: 30px; 
+      border-radius: 15px; 
+      text-align: center; 
+      margin-bottom: 15px; 
+      color: #555; 
+      transition: 0.3s; 
+      width: 100%;
+      box-sizing: border-box;
+      max-width: 600px;
+      font-size: 18px;
+      background: #f8fafd;
+      margin-left: auto;
+      margin-right: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60px;
     }
-    /* 🔴 PDF Merge Animation CSS START */
+    .drop-zone.dragover { 
+      border-color: #4285f4; 
+      background: #e3f0ff; 
+      color: #000;
+    }
+    button { 
+      padding: 12px 20px; 
+      font-size: 16px; 
+      margin: 10px 0; 
+      cursor: pointer; 
+      border: none; 
+      background: #4285f4; 
+      color: white; 
+      border-radius: 8px; 
+      transition: 0.3s;
+      min-width: 120px;
+    }
+    button:hover { background: #306fd0;}
+    .pdf-list { 
+      display: flex; 
+      gap: 20px; 
+      flex-wrap: wrap; 
+      margin-bottom: 10px;
+      justify-content: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .pdf-thumb { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      background: #fff; 
+      border-radius: 10px; 
+      padding: 12px; 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03); 
+      min-width: 90px;
+    }
+    .pdf-thumb canvas { 
+      width: 80px; 
+      height: 110px; 
+      border-radius: 5px; 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08); 
+      margin-bottom: 2px; 
+      background: #eee;
+    }
+    .pdf-thumb .pdf-filename { 
+      font-weight: bold; 
+      font-size: 13px; 
+      margin-bottom: 2px; 
+      color: #4285f4;
+    }
+    .file-remove { 
+      color: red; 
+      cursor: pointer; 
+      font-size: 14px; 
+      margin-top: 4px;
+    }
+    .range-select { 
+      margin: 10px 0; 
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    progress { 
+      width: 100%; 
+      margin-top: 10px; 
+      height: 18px; 
+      border-radius: 5px; 
+    }
+    /* ========================================
+       Merge Animation - Responsive & Centered
+    ========================================= */
     .pdf-merge-animation {
       position: relative;
       width: 100%;
+      max-width: 650px;
       height: 140px;
       overflow: hidden;
       background: linear-gradient(to right, #fff, #f5f5f5);
       display: flex;
       align-items: center;
       margin-bottom: 10px;
+      margin-left: auto;
+      margin-right: auto;
+      justify-content: center;
+      box-sizing: border-box;
+      border-radius: 15px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.07);
     }
     .main-pdf, .small-pdf {
       position: absolute;
@@ -81,7 +204,6 @@
       letter-spacing: 1px;
       font-family: Arial, sans-serif;
     }
-    /* Fold corner for PDF look */
     .main-pdf::after, .small-pdf::after {
       content: "";
       position: absolute;
@@ -105,12 +227,43 @@
     .grow {
       animation: moveAndGrow 6s ease-in-out forwards;
     }
-    /* 🔴 PDF Merge Animation CSS END */
+    /* ========================================
+       Responsive Adjustments
+    ========================================= */
+    @media (max-width:900px) {
+      main {
+        max-width: 100%;
+      }
+      .pdf-merge-animation {
+        max-width: 98vw;
+      }
+      .tab-content {
+        max-width: 98vw;
+      }
+    }
+    @media (max-width:600px) {
+      main { max-width: 100%; }
+      .pdf-list { flex-direction: column; }
+      .pdf-merge-animation {
+        height: 100px;
+        min-width: 250px;
+        max-width: 98vw;
+      }
+      .tab-content {
+        padding: 10px;
+        min-width: 180px;
+      }
+      .drop-zone {
+        font-size: 15px;
+        padding: 18px;
+        min-height: 40px;
+      }
+    }
   </style>
 </head>
 <body>
 
-<!-- 🔴 PDF Merge Animation -->
+<!-- PDF Merge Animation - Now Centered & Responsive -->
 <div class="pdf-merge-animation">
   <div class="main-pdf" id="mainPdf"></div>
   <div class="small-pdf" style="left:150px;"></div>
@@ -363,10 +516,9 @@ splitBtn.addEventListener('click', async ()=>{
   splitProgress.style.display='none';
 });
 
-// 🔴 PDF Merge Animation JS
+// PDF Merge Animation JS
 const mainPdf = document.getElementById("mainPdf");
 const smallPdfs = document.querySelectorAll(".small-pdf");
-
 function startPdfAnimation() {
   mainPdf.classList.add("grow");
   // As the main PDF reaches others, hide them gradually
