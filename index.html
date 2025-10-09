@@ -2,12 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF Merge & Split Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- SortableJS for drag-and-drop -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
-    header { background: linear-gradient(90deg,#4285f4,#34a853); color: white; padding: 20px; width: 100%; text-align: center; font-size: 28px; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.2);}
-    main { max-width: 900px; width: 95%; margin-top: 30px;}
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      background: linear-gradient(90deg,#4285f4,#34a853);
+      color: white;
+      padding: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    main { max-width: 900px; width: 95%; margin-top: 30px; }
     .tabs { display: flex; justify-content: center; margin-bottom: 20px;}
     .tab-btn { flex: 1; padding: 12px 0; cursor: pointer; border: none; background: #ddd; font-weight: bold; transition: 0.3s; font-size: 16px;}
     .tab-btn.active { background: #4285f4; color: white;}
@@ -18,24 +37,18 @@
     .drop-zone.dragover { border-color: #4285f4; background: #e3f0ff; color: #000;}
     button { padding: 12px 20px; font-size: 16px; margin: 10px 0; cursor: pointer; border: none; background: #4285f4; color: white; border-radius: 8px; transition: 0.3s;}
     button:hover { background: #306fd0;}
-    .pdf-preview-list { width: 100%; display: flex; flex-direction: column; gap: 24px; max-height: 320px; overflow-y: auto; margin-bottom: 10px; border-radius: 10px; background: #f7f7f7; padding: 8px;}
-    .sortable-list {display: flex; flex-direction: row; gap: 20px;}
-    .pdf-preview-file { background: #fff; border-radius: 10px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); min-width: 120px;}
-    .pdf-filename { font-weight: bold; margin-bottom: 5px; color: #4285f4;}
+    .pdf-list { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 10px;}
+    .pdf-thumb { display: flex; flex-direction: column; align-items: center; background: #fff; border-radius: 10px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); min-width: 90px;}
+    .pdf-thumb canvas { width: 80px; height: 110px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 2px; background: #eee;}
+    .pdf-thumb .pdf-filename { font-weight: bold; font-size: 13px; margin-bottom: 2px; color: #4285f4;}
     .file-remove { color: red; cursor: pointer; font-size: 14px; margin-top: 4px;}
-    .pdf-pages { display: flex; flex-wrap: wrap; gap: 10px;}
-    .sortable-pages {display: flex; flex-wrap: wrap; gap: 10px;}
-    .pdf-page-thumb { display: flex; flex-direction: column; align-items: center; margin-bottom: 8px; min-width: 90px;}
-    .pdf-page-thumb canvas { width: 80px; height: 110px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 2px; background: #eee;}
-    .pdf-page-thumb span {font-size: 12px;}
     .range-select { margin: 10px 0; }
     progress { width: 100%; margin-top: 10px; height: 18px; border-radius: 5px; }
     @media (max-width:600px) {
       main { max-width: 100%; }
-      .sortable-list { flex-direction: column; }
-      .sortable-pages { flex-direction: column; }
-      .pdf-preview-list { max-height: 220px; }
+      .pdf-list { flex-direction: column; }
     }
+
     /* 🟡 Pacman PDF Animation CSS START */
     .pdf-pacman-container {
       position: relative;
@@ -43,6 +56,7 @@
       height: 120px;
       overflow: hidden;
       background: linear-gradient(90deg, #fdfbfb, #ebedee);
+      margin-bottom: 10px;
     }
     .pacman {
       position: absolute;
@@ -55,6 +69,8 @@
       clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
       animation: movePacman 6s linear infinite, chomping 0.4s infinite;
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      z-index: 2;
+      transition: transform 0.5s;
     }
     .pdf-dot {
       position: absolute;
@@ -74,54 +90,57 @@
       font-weight: bold;
       box-shadow: 0 3px 6px rgba(0,0,0,0.1);
     }
-    .pdf-dot::before {
-      content: "PDF";
-    }
-    .small1 { left: 150px; animation: eaten1 6s linear infinite; }
-    .small2 { left: 300px; animation: eaten2 6s linear infinite; }
-    .small3 { left: 450px; animation: eaten3 6s linear infinite; }
-    .small4 { left: 600px; animation: eaten4 6s linear infinite; }
+    .pdf-dot::before { content: "PDF"; }
+    .small1 { left: 150px; animation: dotMove1 6s linear infinite; }
+    .small2 { left: 300px; animation: dotMove2 6s linear infinite; }
+    .small3 { left: 450px; animation: dotMove3 6s linear infinite; }
+    .small4 { left: 600px; animation: dotMove4 6s linear infinite; }
     @keyframes movePacman {
       0% { left: -80px; }
-      100% { left: 110%; }
+      20% { transform: scale(1); }
+      25% { transform: scale(1.2); }
+      40% { transform: scale(1.2); }
+      45% { transform: scale(1.4); }
+      60% { transform: scale(1.4); }
+      65% { transform: scale(1.6); }
+      80% { transform: scale(1.6); }
+      85% { transform: scale(1.8); }
+      100% { left: 110%; transform: scale(1.8);}
     }
     @keyframes chomping {
       0% { clip-path: polygon(0% 0%, 100% 50%, 0% 100%); }
       50% { clip-path: polygon(10% 20%, 100% 50%, 10% 80%); }
       100% { clip-path: polygon(0% 0%, 100% 50%, 0% 100%); }
     }
-    @keyframes eaten1 {
+    @keyframes dotMove1 {
       0%, 20% { opacity: 1; }
       25%, 100% { opacity: 0; }
     }
-    @keyframes eaten2 {
+    @keyframes dotMove2 {
       0%, 40% { opacity: 1; }
       45%, 100% { opacity: 0; }
     }
-    @keyframes eaten3 {
+    @keyframes dotMove3 {
       0%, 60% { opacity: 1; }
       65%, 100% { opacity: 0; }
     }
-    @keyframes eaten4 {
+    @keyframes dotMove4 {
       0%, 80% { opacity: 1; }
       85%, 100% { opacity: 0; }
     }
     /* 🟡 Pacman PDF Animation CSS END */
   </style>
-  <!-- SortableJS for drag-and-drop -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
 
-<!-- 🟡 Pacman PDF Animation HTML START -->
+<!-- Pacman Animation -->
 <div class="pdf-pacman-container">
-  <div class="pacman"></div>
+  <div class="pacman" id="pacman"></div>
   <div class="pdf-dot small1"></div>
   <div class="pdf-dot small2"></div>
   <div class="pdf-dot small3"></div>
   <div class="pdf-dot small4"></div>
 </div>
-<!-- 🟡 Pacman PDF Animation HTML END -->
 
 <header>PDF Merge & Split Pro</header>
 <main>
@@ -129,23 +148,21 @@
     <button class="tab-btn active" data-tab="merge">Merge PDFs</button>
     <button class="tab-btn" data-tab="split">Split PDF</button>
   </div>
+
   <!-- Merge Section -->
   <div class="tab-content active" id="merge">
     <div class="drop-zone" id="mergeDrop">Drag & drop PDFs here or click to select</div>
     <input type="file" id="mergeFiles" multiple accept="application/pdf">
-    <div class="pdf-preview-list">
-      <div id="mergeList" class="sortable-list"></div>
-    </div>
+    <div class="pdf-list" id="mergeList"></div>
     <button id="mergeBtn">Merge PDFs</button>
     <progress id="mergeProgress" value="0" max="100" style="display:none;"></progress>
   </div>
+
   <!-- Split Section -->
   <div class="tab-content" id="split">
     <div class="drop-zone" id="splitDrop">Drag & drop a PDF here or click to select</div>
     <input type="file" id="splitFile" accept="application/pdf">
-    <div class="pdf-preview-list">
-      <div id="splitList" class="sortable-pages"></div>
-    </div>
+    <div class="pdf-list" id="splitList"></div>
     <div class="range-select">
       <label>Start page: <input type="number" id="splitStart" min="1" value="1" style="width:40px;"></label>
       <label>End page: <input type="number" id="splitEnd" min="1" value="1" style="width:40px;"></label>
@@ -173,8 +190,7 @@ tabBtns.forEach(btn => {
 // --- Merge Tab ---
 const mergeFilesArr = [];
 setupDropZone(document.getElementById('mergeDrop'), document.getElementById('mergeFiles'), mergeFilesArr, document.getElementById('mergeList'), true);
-
-function setupDropZone(dropZone, input, fileListArray, previewListDiv, isMerge){
+function setupDropZone(dropZone, input, fileArr, listDiv, isMerge){
   dropZone.addEventListener('click', ()=> input.click());
   dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('dragover'); });
   dropZone.addEventListener('dragleave', e=>{ e.preventDefault(); dropZone.classList.remove('dragover'); });
@@ -182,79 +198,68 @@ function setupDropZone(dropZone, input, fileListArray, previewListDiv, isMerge){
     e.preventDefault();
     dropZone.classList.remove('dragover');
     const files = Array.from(e.dataTransfer.files).filter(f=>f.type==='application/pdf');
-    addNewFiles(fileListArray, files);
-    await renderFileList(fileListArray, previewListDiv, isMerge);
+    addNewFiles(fileArr, files);
+    await renderPDFList(fileArr, listDiv, isMerge);
   });
   input.addEventListener('change', async ()=>{
     const files = Array.from(input.files);
-    addNewFiles(fileListArray, files);
-    await renderFileList(fileListArray, previewListDiv, isMerge);
+    addNewFiles(fileArr, files);
+    await renderPDFList(fileArr, listDiv, isMerge);
   });
 }
-
-function addNewFiles(fileListArray, newFiles) {
+function addNewFiles(fileArr, newFiles) {
   newFiles.forEach(file => {
-    if (!fileListArray.some(f => f.name === file.name && f.size === file.size)) {
-      fileListArray.push(file);
+    if (!fileArr.some(f => f.name === file.name && f.size === file.size)) {
+      fileArr.push(file);
     }
   });
 }
-
-async function renderFileList(files, containerDiv, isMerge){
+async function renderPDFList(files, containerDiv, isMerge){
   containerDiv.innerHTML = '';
   for(let i=0; i<files.length; i++) {
     const file = files[i];
-    const fileDiv = document.createElement('div');
-    fileDiv.className = 'pdf-preview-file';
-    fileDiv.draggable = true;
-    fileDiv.dataset.index = i;
-    fileDiv.style.cursor = "grab";
-    fileDiv.innerHTML = `<div class="pdf-filename">${file.name}</div>`;
+    const thumbDiv = document.createElement('div');
+    thumbDiv.className = 'pdf-thumb';
+    thumbDiv.draggable = true;
+    thumbDiv.dataset.index = i;
+    thumbDiv.innerHTML = `<div class="pdf-filename">${file.name}</div>`;
     const removeBtn = document.createElement('span');
     removeBtn.textContent = "Remove";
     removeBtn.classList.add('file-remove');
     removeBtn.onclick = () => {
       files.splice(i,1);
-      renderFileList(files, containerDiv, isMerge);
+      renderPDFList(files, containerDiv, isMerge);
     };
-    fileDiv.appendChild(removeBtn);
+    thumbDiv.appendChild(removeBtn);
 
     // Preview first page only for merge
-    const previewArea = document.createElement('div');
-    previewArea.className = 'pdf-pages';
-    fileDiv.appendChild(previewArea);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-      const page = await pdf.getPage(1);
+    if(isMerge) {
       const canvas = document.createElement('canvas');
-      canvas.width = 80;
-      canvas.height = 110;
-      const scale = canvas.width / page.getViewport({scale:1}).width;
-      const viewport = page.getViewport({scale});
-      canvas.height = viewport.height;
-      await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
-      previewArea.appendChild(canvas);
-      previewArea.appendChild(document.createElement('br'));
-      previewArea.appendChild(document.createTextNode("Page 1"));
-    } catch(e) {
-      previewArea.innerHTML = "Preview unavailable";
+      canvas.width = 80; canvas.height = 110;
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+        const page = await pdf.getPage(1);
+        const scale = canvas.width / page.getViewport({scale:1}).width;
+        const viewport = page.getViewport({scale});
+        canvas.height = viewport.height;
+        await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+      } catch(e) { canvas.alt="Preview unavailable"; }
+      thumbDiv.appendChild(canvas);
     }
-    containerDiv.appendChild(fileDiv);
+    containerDiv.appendChild(thumbDiv);
   }
-  // Make sortable
+  // Make draggable
   Sortable.create(containerDiv, {
     animation: 150,
     onEnd: function (evt) {
-      // Rearrange files array to match visual order
       const newOrder = Array.from(containerDiv.children).map(el => parseInt(el.dataset.index));
       const reordered = newOrder.map(idx => files[idx]);
       files.splice(0, files.length, ...reordered);
-      renderFileList(files, containerDiv, isMerge);
+      renderPDFList(files, containerDiv, isMerge);
     }
   });
 }
-
 const mergeBtn = document.getElementById('mergeBtn');
 const mergeProgress = document.getElementById('mergeProgress');
 mergeBtn.addEventListener('click', async ()=>{
@@ -286,13 +291,10 @@ mergeBtn.addEventListener('click', async ()=>{
 // --- Split Tab ---
 const splitFilesArr = [];
 let splitPagesArr = [];
-let splitFileOriginalOrder = [];
 setupDropZone(document.getElementById('splitDrop'), document.getElementById('splitFile'), splitFilesArr, document.getElementById('splitList'), false);
-
 async function renderSplitPages(files, containerDiv){
   containerDiv.innerHTML = '';
   splitPagesArr = [];
-  splitFileOriginalOrder = [];
   if (files.length === 0) return;
   const file = files[0];
   try {
@@ -303,22 +305,19 @@ async function renderSplitPages(files, containerDiv){
     document.getElementById('splitEnd').max = numPages;
     document.getElementById('splitEnd').value = numPages;
     splitPagesArr = Array.from({length: numPages}, (_, i) => i+1);
-    splitFileOriginalOrder = splitPagesArr.slice();
 
     for(let pageNum = 1; pageNum <= numPages; pageNum++) {
       const pageThumbDiv = document.createElement('div');
-      pageThumbDiv.className = 'pdf-page-thumb';
+      pageThumbDiv.className = 'pdf-thumb';
       pageThumbDiv.draggable = true;
       pageThumbDiv.dataset.pageNum = pageNum;
       const canvas = document.createElement('canvas');
-      canvas.width = 80;
-      canvas.height = 110;
+      canvas.width = 80; canvas.height = 110;
       pageThumbDiv.appendChild(canvas);
       const pageLabel = document.createElement('span');
       pageLabel.textContent = `Page ${pageNum}`;
       pageThumbDiv.appendChild(pageLabel);
       containerDiv.appendChild(pageThumbDiv);
-
       pdf.getPage(pageNum).then(page => {
         const scale = canvas.width / page.getViewport({scale:1}).width;
         const viewport = page.getViewport({scale});
@@ -326,11 +325,9 @@ async function renderSplitPages(files, containerDiv){
         page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
       });
     }
-    // Make sortable
     Sortable.create(containerDiv, {
       animation: 150,
       onEnd: function (evt) {
-        // Update splitPagesArr based on current order
         splitPagesArr = Array.from(containerDiv.children).map(el => parseInt(el.dataset.pageNum));
       }
     });
@@ -338,26 +335,20 @@ async function renderSplitPages(files, containerDiv){
     containerDiv.innerHTML = "Preview unavailable";
   }
 }
-
-// Redraw splitList on file change
 document.getElementById('splitFile').addEventListener('change', ()=>{
   renderSplitPages(splitFilesArr, document.getElementById('splitList'));
 });
 document.getElementById('splitDrop').addEventListener('drop', ()=>{
   setTimeout(()=>renderSplitPages(splitFilesArr, document.getElementById('splitList')),100);
 });
-
-// Select all pages button
 document.getElementById('selectAllPages').onclick = function() {
   if (splitPagesArr.length) {
     document.getElementById('splitStart').value = 1;
     document.getElementById('splitEnd').value = splitPagesArr.length;
   }
 };
-
 const splitBtn = document.getElementById('splitBtn');
 const splitProgress = document.getElementById('splitProgress');
-
 splitBtn.addEventListener('click', async ()=>{
   const file = splitFilesArr[0];
   if(!file){ alert('Select a PDF to split.'); return;}
@@ -366,8 +357,6 @@ splitBtn.addEventListener('click', async ()=>{
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
-
-    // Range selection
     let start = parseInt(document.getElementById('splitStart').value);
     let end = parseInt(document.getElementById('splitEnd').value);
     if (!start || !end || start > end || start < 1 || end > splitPagesArr.length) {
@@ -375,15 +364,13 @@ splitBtn.addEventListener('click', async ()=>{
       splitProgress.style.display='none';
       return;
     }
-
     // Pages to export in their current visual order
-    const pageIndices = splitPagesArr.slice(start-1, end).map(n => n-1); // zero-based
+    const pageIndices = splitPagesArr.slice(start-1, end).map(n => n-1);
     if (pageIndices.length === 0) {
       alert('No pages selected.');
       splitProgress.style.display='none';
       return;
     }
-
     const newPdf = await PDFLib.PDFDocument.create();
     const copiedPages = await newPdf.copyPages(pdf, pageIndices);
     copiedPages.forEach(page => newPdf.addPage(page));
