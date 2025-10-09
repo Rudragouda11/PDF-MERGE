@@ -30,7 +30,7 @@
     .tabs { display: flex; justify-content: center; margin-bottom: 20px;}
     .tab-btn { flex: 1; padding: 12px 0; cursor: pointer; border: none; background: #ddd; font-weight: bold; transition: 0.3s; font-size: 16px;}
     .tab-btn.active { background: #4285f4; color: white;}
-    .tab-content { display: none; flex-direction: column; align-items: center; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.15); margin-bottom: 40px; width: 100%;}
+    .tab-content { display: none; flex-direction: column; align-items: center; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.15); margin-bottom: 40px; width:100%;}
     .tab-content.active { display: flex;}
     input[type="file"] { display:none; }
     .drop-zone { border: 2px dashed #bbb; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 15px; color: #555; transition: 0.3s; width: 100%;}
@@ -48,98 +48,75 @@
       main { max-width: 100%; }
       .pdf-list { flex-direction: column; }
     }
-
-    /* 🟡 Pacman PDF Animation CSS START */
-    .pdf-pacman-container {
+    /* 🔴 PDF Merge Animation CSS START */
+    .pdf-merge-animation {
       position: relative;
       width: 100%;
-      height: 120px;
+      height: 140px;
       overflow: hidden;
-      background: linear-gradient(90deg, #fdfbfb, #ebedee);
+      background: linear-gradient(to right, #fff, #f5f5f5);
+      display: flex;
+      align-items: center;
       margin-bottom: 10px;
     }
-    .pacman {
+    .main-pdf, .small-pdf {
       position: absolute;
-      top: 35px;
-      left: -80px;
-      width: 60px;
-      height: 60px;
-      background: radial-gradient(circle at 30% 30%, #ffcc00 0%, #ffb300 70%);
-      border-radius: 50%;
-      clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
-      animation: movePacman 6s linear infinite, chomping 0.4s infinite;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      z-index: 2;
-      transition: transform 0.5s;
-    }
-    .pdf-dot {
-      position: absolute;
-      top: 50px;
+      top: 40px;
       width: 40px;
-      height: 40px;
-      background: white;
-      border: 2px solid #d32f2f;
-      border-radius: 5px;
-      background-image: linear-gradient(to bottom, #fff 0%, #f8d7da 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      color: #d32f2f;
+      height: 50px;
+      background: #ff4b4b;
+      border-radius: 4px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    .main-pdf::before, .small-pdf::before {
+      content: "PDF";
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 10px;
+      color: white;
       font-weight: bold;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      letter-spacing: 1px;
+      font-family: Arial, sans-serif;
     }
-    .pdf-dot::before { content: "PDF"; }
-    .small1 { left: 150px; animation: dotMove1 6s linear infinite; }
-    .small2 { left: 300px; animation: dotMove2 6s linear infinite; }
-    .small3 { left: 450px; animation: dotMove3 6s linear infinite; }
-    .small4 { left: 600px; animation: dotMove4 6s linear infinite; }
-    @keyframes movePacman {
-      0% { left: -80px; }
-      20% { transform: scale(1); }
-      25% { transform: scale(1.2); }
-      40% { transform: scale(1.2); }
-      45% { transform: scale(1.4); }
-      60% { transform: scale(1.4); }
-      65% { transform: scale(1.6); }
-      80% { transform: scale(1.6); }
-      85% { transform: scale(1.8); }
-      100% { left: 110%; transform: scale(1.8);}
+    /* Fold corner for PDF look */
+    .main-pdf::after, .small-pdf::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      border-left: 12px solid transparent;
+      border-bottom: 12px solid rgba(255,255,255,0.7);
     }
-    @keyframes chomping {
-      0% { clip-path: polygon(0% 0%, 100% 50%, 0% 100%); }
-      50% { clip-path: polygon(10% 20%, 100% 50%, 10% 80%); }
-      100% { clip-path: polygon(0% 0%, 100% 50%, 0% 100%); }
+    .small-pdf {
+      opacity: 1;
+      transition: opacity 0.3s ease;
     }
-    @keyframes dotMove1 {
-      0%, 20% { opacity: 1; }
-      25%, 100% { opacity: 0; }
+    @keyframes moveAndGrow {
+      0% { left: -60px; transform: scale(1); }
+      20% { left: 140px; transform: scale(1.2); }
+      40% { left: 280px; transform: scale(1.4); }
+      60% { left: 420px; transform: scale(1.6); }
+      80% { left: 560px; transform: scale(1.8); }
+      100% { left: 100%; transform: scale(2); }
     }
-    @keyframes dotMove2 {
-      0%, 40% { opacity: 1; }
-      45%, 100% { opacity: 0; }
+    .grow {
+      animation: moveAndGrow 6s ease-in-out forwards;
     }
-    @keyframes dotMove3 {
-      0%, 60% { opacity: 1; }
-      65%, 100% { opacity: 0; }
-    }
-    @keyframes dotMove4 {
-      0%, 80% { opacity: 1; }
-      85%, 100% { opacity: 0; }
-    }
-    /* 🟡 Pacman PDF Animation CSS END */
+    /* 🔴 PDF Merge Animation CSS END */
   </style>
 </head>
 <body>
 
-<!-- Pacman Animation -->
-<div class="pdf-pacman-container">
-  <div class="pacman" id="pacman"></div>
-  <div class="pdf-dot small1"></div>
-  <div class="pdf-dot small2"></div>
-  <div class="pdf-dot small3"></div>
-  <div class="pdf-dot small4"></div>
+<!-- 🔴 PDF Merge Animation -->
+<div class="pdf-merge-animation">
+  <div class="main-pdf" id="mainPdf"></div>
+  <div class="small-pdf" style="left:150px;"></div>
+  <div class="small-pdf" style="left:300px;"></div>
+  <div class="small-pdf" style="left:450px;"></div>
+  <div class="small-pdf" style="left:600px;"></div>
 </div>
 
 <header>PDF Merge & Split Pro</header>
@@ -385,6 +362,21 @@ splitBtn.addEventListener('click', async ()=>{
   }
   splitProgress.style.display='none';
 });
+
+// 🔴 PDF Merge Animation JS
+const mainPdf = document.getElementById("mainPdf");
+const smallPdfs = document.querySelectorAll(".small-pdf");
+
+function startPdfAnimation() {
+  mainPdf.classList.add("grow");
+  // As the main PDF reaches others, hide them gradually
+  let delays = [1000, 2200, 3400, 4600];
+  smallPdfs.forEach((dot, i) => {
+    setTimeout(() => { dot.style.opacity = 0; }, delays[i]);
+  });
+}
+// Start automatically after page load
+window.addEventListener("load", startPdfAnimation);
 </script>
 </body>
 </html>
